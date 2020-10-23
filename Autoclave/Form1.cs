@@ -231,8 +231,18 @@ namespace Autoclave
                         door.Text = "Close Door";
                         door_status_label.Text = "Open";
                     }
-                    
-
+                    steem1_temp.Text = adc2temp(inputSerial[14] * 256 + inputSerial[13]).ToString("n3");
+                    steem2_temp.Text = adc2temp(inputSerial[16] * 256 + inputSerial[15]).ToString("n3");
+                    drier_temp.Text  = adc2temp(inputSerial[17]).ToString("n3");
+                    Label[] rl = {rl1_status, rl2_status, rl3_status, rl4_status, rl5_status,
+                    rl6_status,rl7_status,rl8_status,rl9_status,rl10_status,rl11_status,rl12_status,
+                    rl13_status,rl14_status,rl15_status,};
+                    int x = inputSerial[19]*256+ inputSerial[18];
+                    for (int i = 0; i < 15;i++) {
+                        rl[i].Text = (x % 2==1) ? "on" : "off";
+                        rl[i].BackColor= (x % 2 == 1) ? Color.Green : Color.Red;
+                        x = x / 2;
+                    }
 
                     break;
             }
@@ -241,7 +251,7 @@ namespace Autoclave
         double adc2temp(int adc)
         {
             double x = (double)adc;
-            return 0.0001991352 * x * x - 0.5090383200 * x + 258.6052355506;
+            return 0.0001991352 * x * x - 0.5090383200 * x + 258.6052355506-int.Parse(temp_offset.Text);
         }
         double adc2press(int adc)
         {
@@ -463,10 +473,31 @@ namespace Autoclave
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 if (mode!=0) {
-                    data_Send[0] = (byte)mode;
-                    data_Send[1] = (byte)1;
-                    sendProtocol(7, data_Send, 2);
+                    byte i = 0;
+                    data_Send[i++] = (byte)mode;
+                    data_Send[i++] = 1;
+                    data_Send[i++] = (byte)(int.Parse(steem1_temp_setpoint.Text)%256);
+                    data_Send[i++] = (byte)(int.Parse(steem1_temp_setpoint.Text) / 256);
+                    data_Send[i++] = (byte)(int.Parse(steem2_temp_setpoint.Text) % 256);
+                    data_Send[i++] = (byte)(int.Parse(steem2_temp_setpoint.Text) / 256);
+                    data_Send[i++] = byte.Parse(drier_temp_setpoint.Text);
+                    data_Send[i++] = byte.Parse(steem_on_time.Text);
+                    data_Send[i++] = byte.Parse(steem_off_time.Text);
+                    data_Send[i++] = byte.Parse(steem_shooting_time.Text);
+                    data_Send[i++] = byte.Parse(temp_offset.Text);
+                    data_Send[i++] = byte.Parse(door_opening_time.Text);
+                    data_Send[i++] = byte.Parse(door_closing_time.Text);
 
+                    sendProtocol(7, data_Send, i);
+                    steem1_temp_setpoint.Enabled = false;
+                    steem2_temp_setpoint.Enabled = false;
+                    drier_temp_setpoint.Enabled = false;
+                    steem_on_time.Enabled = false;
+                    steem_off_time.Enabled = false;
+                    steem_shooting_time.Enabled = false;
+                    temp_offset.Enabled = false;
+                    door_opening_time.Enabled = false;
+                    door_closing_time.Enabled = false;
                 }
             }
             else if (request_Send == 10)
@@ -498,6 +529,15 @@ namespace Autoclave
                 request_Send = 0;
                 data_Send[0] = (byte)1;
                 sendProtocol(10, data_Send, 1);
+                steem1_temp_setpoint.Enabled = true;
+                steem2_temp_setpoint.Enabled = true;
+                drier_temp_setpoint.Enabled = true;
+                steem_on_time.Enabled = true;
+                steem_off_time.Enabled = true;
+                steem_shooting_time.Enabled = true;
+                temp_offset.Enabled = true;
+                door_opening_time.Enabled = true;
+                door_closing_time.Enabled = true;
             }
         }
 
